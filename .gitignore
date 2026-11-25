@@ -1,6 +1,20 @@
+# Secrets: never commit
 .env
 *.env
+.env.*
 !.env.example
+*.pem
+*.key
+
+# Build / deps
 node_modules/
 dist/
+coverage/
+
+# Runtime data
+data/
 *.sqlite
+*.sqlite-*
+*.db
+*.log
+.DS_Store
