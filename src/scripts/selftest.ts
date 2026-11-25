@@ -19,7 +19,12 @@ import { log, setLogLevel } from '../util/logger.js';
 
 const config = loadConfig();
 setLogLevel(config.logLevel);
-configureYtdlp({ binary: config.ytdlpPath, cookies: config.ytdlpCookies, jsRuntime: config.ytdlpJsRuntime });
+configureYtdlp({
+  binary: config.ytdlpPath,
+  cookies: config.ytdlpCookies,
+  jsRuntime: config.ytdlpJsRuntime,
+  cacheDir: config.ytdlpCacheDir,
+});
 configureFfmpeg(config.ffmpegPath);
 configureSpotify(config.spotifyClientId, config.spotifyClientSecret);
 

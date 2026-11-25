@@ -6,12 +6,18 @@ import { registerCommands } from './discord/registry.js';
 import { PlayerManager } from './player/manager.js';
 import { configureFfmpeg } from './player/stream.js';
 import { configureSpotify } from './sources/spotify.js';
+import { getStream } from './sources/youtube.js';
 import { configureYtdlp, ytdlpVersion } from './sources/ytdlp.js';
 import { log, setLogLevel } from './util/logger.js';
 
 const config = loadConfig();
 setLogLevel(config.logLevel);
-configureYtdlp({ binary: config.ytdlpPath, cookies: config.ytdlpCookies, jsRuntime: config.ytdlpJsRuntime });
+configureYtdlp({
+  binary: config.ytdlpPath,
+  cookies: config.ytdlpCookies,
+  jsRuntime: config.ytdlpJsRuntime,
+  cacheDir: config.ytdlpCacheDir,
+});
 configureFfmpeg(config.ffmpegPath);
 configureSpotify(config.spotifyClientId, config.spotifyClientSecret);
 
@@ -26,6 +32,11 @@ client.once(Events.ClientReady, async (c) => {
   ytdlpVersion()
     .then((v) => log.info(`yt-dlp ${v}`))
     .catch(() => log.error('yt-dlp not found: set YTDLP_PATH or install it'));
+  // Warm yt-dlp's cache (YouTube player challenge) so the first /play is fast.
+  const warm = Date.now();
+  getStream('https://www.youtube.com/watch?v=jNQXAC9IVRw')
+    .then(() => log.info(`yt-dlp warm-up done in ${Date.now() - warm}ms`))
+    .catch((e: unknown) => log.warn('yt-dlp warm-up failed:', (e as Error).message));
   if (config.guildId) {
     try {
       const n = await registerCommands(config.token, config.clientId, config.guildId);

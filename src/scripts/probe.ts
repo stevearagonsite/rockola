@@ -11,7 +11,12 @@ import { configureSpotify } from '../sources/spotify.js';
 import { configureYtdlp, ytdlpVersion } from '../sources/ytdlp.js';
 
 const config = loadConfig(false);
-configureYtdlp({ binary: config.ytdlpPath, cookies: config.ytdlpCookies, jsRuntime: config.ytdlpJsRuntime });
+configureYtdlp({
+  binary: config.ytdlpPath,
+  cookies: config.ytdlpCookies,
+  jsRuntime: config.ytdlpJsRuntime,
+  cacheDir: config.ytdlpCacheDir,
+});
 configureFfmpeg(config.ffmpegPath);
 configureSpotify(config.spotifyClientId, config.spotifyClientSecret);
 

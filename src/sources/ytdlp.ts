@@ -4,6 +4,7 @@ export interface YtdlpOptions {
   binary: string;
   cookies?: string;
   jsRuntime?: string;
+  cacheDir?: string;
   timeoutMs?: number;
 }
 
@@ -47,7 +48,9 @@ export class YtdlpError extends Error {
 }
 
 function baseArgs(): string[] {
-  const args = ['--no-warnings', '--no-progress', '--ignore-config', '--no-cache-dir'];
+  // The cache keeps YouTube's solved player challenges between calls: keep it enabled.
+  const args = ['--no-warnings', '--no-progress', '--ignore-config'];
+  if (options.cacheDir) args.push('--cache-dir', options.cacheDir);
   if (options.cookies) args.push('--cookies', options.cookies);
   if (options.jsRuntime) args.push('--js-runtimes', options.jsRuntime);
   return args;

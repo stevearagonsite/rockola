@@ -13,6 +13,7 @@ export interface Config {
   ytdlpPath: string;
   ytdlpCookies: string | undefined;
   ytdlpJsRuntime: string | undefined;
+  ytdlpCacheDir: string | undefined;
   ffmpegPath: string;
   logLevel: string;
 }
@@ -48,6 +49,7 @@ export function loadConfig(requireDiscord = true): Config {
     ytdlpPath: opt('YTDLP_PATH') ?? 'yt-dlp',
     ytdlpCookies: opt('YTDLP_COOKIES'),
     ytdlpJsRuntime: opt('YTDLP_JS_RUNTIME'),
+    ytdlpCacheDir: opt('YTDLP_CACHE_DIR'),
     ffmpegPath: opt('FFMPEG_PATH') ?? 'ffmpeg',
     logLevel: opt('LOG_LEVEL') ?? 'info',
   };

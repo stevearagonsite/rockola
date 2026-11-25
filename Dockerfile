@@ -11,17 +11,17 @@ COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
 FROM node:22-bookworm-slim
-ARG TARGETARCH
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates curl tini \
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates tini python3 python3-venv \
   && rm -rf /var/lib/apt/lists/*
-# yt-dlp standalone build (self-updates at start, see docker/entrypoint.sh)
-RUN mkdir -p /opt/yt-dlp \
-  && case "$TARGETARCH" in arm64) f=yt-dlp_linux_aarch64 ;; *) f=yt-dlp_linux ;; esac \
-  && curl -fsSL -o /opt/yt-dlp/yt-dlp "https://github.com/yt-dlp/yt-dlp/releases/latest/download/$f" \
-  && chmod 755 /opt/yt-dlp/yt-dlp && chown -R node:node /opt/yt-dlp
+# yt-dlp from PyPI in its own venv (starts much faster than the single-file build) and
+# upgraded at container start, see docker/entrypoint.sh
+RUN python3 -m venv /opt/yt-dlp \
+  && /opt/yt-dlp/bin/pip install --no-cache-dir --upgrade pip "yt-dlp[default]" \
+  && chown -R node:node /opt/yt-dlp
 ENV NODE_ENV=production \
-    YTDLP_PATH=/opt/yt-dlp/yt-dlp \
+    YTDLP_PATH=/opt/yt-dlp/bin/yt-dlp \
     YTDLP_JS_RUNTIME=node \
+    YTDLP_CACHE_DIR=/app/data/yt-dlp-cache \
     DATABASE_PATH=/app/data/rockola.sqlite
 WORKDIR /app
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
