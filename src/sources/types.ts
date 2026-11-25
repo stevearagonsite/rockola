@@ -49,4 +49,6 @@ export interface ResolvedStream {
   durationMs?: number | null;
   youtubeId?: string;
   isLive?: boolean;
+  /** The URL is an HLS playlist. */
+  hls?: boolean;
 }

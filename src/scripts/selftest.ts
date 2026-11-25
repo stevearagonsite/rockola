@@ -52,6 +52,7 @@ client.once('clientReady', async () => {
   const results: string[] = [];
   for (const q of queries) {
     const started = Date.now();
+    const packetsBefore = player.voiceStats().packets;
     try {
       const res = await resolveQuery(q);
       const first = res.tracks[0];
@@ -65,7 +66,9 @@ client.once('clientReady', async () => {
       }
       await sleep(seconds * 1000);
       const status = player.audio.state.status;
-      const line = `${reached && player.pcmBytes > 0 ? 'PASS' : 'FAIL'} ${q} -> "${track.title}" [${res.tracks.length} track(s)${res.playlistName ? ` from "${res.playlistName}"` : ''}] status=${status} pcmBytes=${player.pcmBytes} positionMs=${player.positionMs} startupMs=${Date.now() - started - seconds * 1000}`;
+      const v = player.voiceStats();
+      const ok = reached && player.pcmBytes > 0 && player.pcmPeak > 500 && v.packets > packetsBefore;
+      const line = `${ok ? 'PASS' : 'FAIL'} ${q} -> "${track.title}" [${res.tracks.length} track(s)${res.playlistName ? ` from "${res.playlistName}"` : ''}] status=${status} pcmBytes=${player.pcmBytes} peak=${player.pcmPeak} udpPackets=+${v.packets - packetsBefore} enc=${v.encryption} dave=${v.dave} positionMs=${player.positionMs} startupMs=${Date.now() - started - seconds * 1000}`;
       console.log(`SELFTEST ${line}`);
       results.push(line);
       await player.stop().catch(() => undefined);

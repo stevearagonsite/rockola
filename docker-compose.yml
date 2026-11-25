@@ -1,0 +1,17 @@
+services:
+  rockola:
+    build: .
+    image: rockola:latest
+    container_name: rockola
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - rockola-data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  rockola-data:

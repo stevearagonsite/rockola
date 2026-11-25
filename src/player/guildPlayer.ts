@@ -72,7 +72,10 @@ export class GuildPlayer {
       }
       if (newState.status === AudioPlayerStatus.Playing && oldState.status !== AudioPlayerStatus.Playing) {
         const track = this.queue.current;
-        if (track) log.info(`[${this.deps.guildId}] playing "${track.title}" (${track.source})`);
+        if (track) {
+          const v = this.voiceStats();
+          log.info(`[${this.deps.guildId}] playing "${track.title}" (${track.source}) in <#${this.channelId}> voice=${v.status} enc=${v.encryption} dave=${v.dave}`);
+        }
       }
     });
     this.audio.on('error', (e) => log.warn(`[${this.deps.guildId}] audio player error:`, e.message));
@@ -106,6 +109,27 @@ export class GuildPlayer {
 
   get pcmBytes(): number {
     return this.pcm?.bytes() ?? 0;
+  }
+
+  get pcmPeak(): number {
+    return this.pcm?.peak() ?? 0;
+  }
+
+  /**
+   * What actually went out to Discord: UDP packets sent on this connection, encryption mode and
+   * whether DAVE end-to-end encryption is active.
+   */
+  voiceStats(): { status: string; packets: number; encryption: string; dave: number | null } {
+    const state = this.connection?.state as
+      | { status: string; networking?: { state: { connectionData?: { sequence?: number; packetsPlayed?: number; encryptionMode?: string }; dave?: { protocolVersion?: number } } } }
+      | undefined;
+    const net = state?.networking?.state;
+    return {
+      status: state?.status ?? 'none',
+      packets: net?.connectionData?.packetsPlayed ?? 0,
+      encryption: net?.connectionData?.encryptionMode ?? 'n/a',
+      dave: net?.dave?.protocolVersion ?? null,
+    };
   }
 
   private msg(key: MessageKey, vars?: Record<string, string | number>): string {
@@ -186,6 +210,7 @@ export class GuildPlayer {
       headers: stream.headers,
       seekMs,
       filterChain: buildFilterChain(this.filters),
+      hls: stream.hls,
     });
     this.pcm = pcm;
     const resource = createAudioResource<ResourceMeta>(pcm.stream, {
@@ -206,7 +231,11 @@ export class GuildPlayer {
     const finished = this.queue.current;
     if (finished) {
       this.lastStats = { title: finished.title, pcmBytes: this.pcmBytes, playedMs: this.positionMs };
-      log.info(`[${this.guildId}] finished "${finished.title}" pcmBytes=${this.lastStats.pcmBytes} playedMs=${this.lastStats.playedMs}`);
+      const v = this.voiceStats();
+      log.info(
+        `[${this.guildId}] finished "${finished.title}" pcmBytes=${this.lastStats.pcmBytes} peak=${this.pcmPeak} playedMs=${this.lastStats.playedMs} ` +
+          `voice=${v.status} udpPackets=${v.packets} enc=${v.encryption} dave=${v.dave}`,
+      );
       if (this.lastStats.pcmBytes === 0 && !this.skipRequested) {
         await this.say(this.msg('error.trackFailed', { title: finished.title }));
       }

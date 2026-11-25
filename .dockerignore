@@ -1,0 +1,13 @@
+.git
+.githooks
+.github
+node_modules
+dist
+coverage
+data
+.env
+*.env
+.env.*
+*.log
+test
+docker-compose.yml

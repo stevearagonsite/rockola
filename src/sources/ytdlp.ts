@@ -36,6 +36,7 @@ export interface YtdlpInfo {
   entries?: (YtdlpInfo | null)[];
   requested_formats?: YtdlpInfo[];
   acodec?: string;
+  protocol?: string;
 }
 
 export class YtdlpError extends Error {

@@ -66,6 +66,7 @@ export async function getStream(target: string): Promise<ResolvedStream> {
     durationMs: typeof info.duration === 'number' ? Math.round(info.duration * 1000) : null,
     youtubeId: isYouTube(info) ? info.id : undefined,
     isLive: info.is_live === true,
+    hls: /m3u8/.test(format.protocol ?? '') || /\.m3u8|\/manifest\//.test(url),
   };
 }
 

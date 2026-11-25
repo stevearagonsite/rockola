@@ -61,3 +61,15 @@ describe('SettingsStore', () => {
     s.close();
   });
 });
+
+describe('ffmpegArgs HLS', () => {
+  it('disables picky extensions for HLS when supported and never seeks live streams', async () => {
+    const { setHlsPickyOption } = await import('../src/player/stream.js');
+    setHlsPickyOption(true);
+    const args = ffmpegArgs({ url: 'https://host/manifest/hls.m3u8', hls: true, seekMs: 5000, filterChain: 'x' });
+    expect(args[args.indexOf('-extension_picky') + 1]).toBe('0');
+    expect(args).not.toContain('-ss');
+    setHlsPickyOption(false);
+    expect(ffmpegArgs({ url: 'https://host/a.m3u8', hls: true, filterChain: 'x' })).not.toContain('-extension_picky');
+  });
+});
