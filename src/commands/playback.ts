@@ -6,7 +6,7 @@ import {
   type SendableChannels,
 } from 'discord.js';
 import { nowPlayingEmbed, trackLink } from '../discord/ui.js';
-import { resolveQuery, toTrack, UnsupportedError } from '../sources/resolver.js';
+import { classifyLoadError, resolveQuery, toTrack } from '../sources/resolver.js';
 import type { Track, TrackInfo } from '../sources/types.js';
 import { searchYouTube } from '../sources/youtube.js';
 import { log } from '../util/logger.js';
@@ -69,9 +69,9 @@ const play: Command = {
     try {
       result = await resolveQuery(query);
     } catch (e) {
-      log.warn(`resolve failed for "${query}":`, (e as Error).message);
-      const reason = e instanceof UnsupportedError ? e.message : (e as Error).message.slice(0, 180);
-      await reply(ctx, `❌ ${msg(ctx, 'error.loadFailed', { reason })}`);
+      const err = classifyLoadError(e);
+      log.warn(`resolve failed for "${query}" (${err.reason}):`, err.message);
+      await reply(ctx, `❌ ${msg(ctx, `load.${err.reason}`)}`);
       return;
     }
     if (result.tracks.length === 0) {
@@ -82,8 +82,10 @@ const play: Command = {
   },
   async autocomplete(interaction: AutocompleteInteraction<'cached'>) {
     const text = interaction.options.getFocused().trim();
-    if (text.length < 2 || /^https?:\/\//i.test(text)) {
-      await interaction.respond(text ? [{ name: text.slice(0, 100), value: text.slice(0, 100) }] : []);
+    // No suggestions for links: Discord submits a highlighted suggestion on Enter, and one computed
+    // a keystroke earlier (or cut to the 100-char choice limit) would send an incomplete URL.
+    if (text.length < 2 || /^(https?:\/\/|spotify:)/i.test(text) || text.length > 100) {
+      await interaction.respond([]);
       return;
     }
     try {

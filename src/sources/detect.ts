@@ -2,6 +2,8 @@
 export type Detected =
   | { type: 'youtube'; kind: 'video'; id: string; url: string }
   | { type: 'youtube'; kind: 'playlist'; listId: string; url: string }
+  /** A YouTube link whose video id is not 11 characters (usually copied incompletely). */
+  | { type: 'youtube'; kind: 'invalid'; id: string }
   | { type: 'spotify'; kind: 'track' | 'album' | 'playlist' | 'artist'; id: string }
   | { type: 'spotify'; kind: 'short'; url: string }
   | { type: 'spotify'; kind: 'unsupported'; what: string }
@@ -43,6 +45,7 @@ function detectYouTube(u: URL): Detected | null {
   } else return null;
   if (id && YT_ID.test(id)) return { type: 'youtube', kind: 'video', id, url: `https://www.youtube.com/watch?v=${id}` };
   const listId = u.searchParams.get('list');
+  if (id && !(listId && !listId.startsWith('RD'))) return { type: 'youtube', kind: 'invalid', id };
   // watch?list=... without a video id: treat as a playlist (mixes "RD…" are endless, so skip them)
   if (listId && !listId.startsWith('RD')) {
     return { type: 'youtube', kind: 'playlist', listId, url: `https://www.youtube.com/playlist?list=${listId}` };

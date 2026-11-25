@@ -10,6 +10,33 @@ export const MAX_PLAYLIST_ITEMS = 500;
 
 export class UnsupportedError extends Error {}
 
+export type LoadErrorReason = 'incompleteLink' | 'unavailable' | 'private' | 'ageRestricted' | 'unsupported' | 'blocked' | 'generic';
+
+/** An error safe to show to users: a reason code, never raw extractor output. */
+export class LoadError extends Error {
+  constructor(readonly reason: LoadErrorReason, detail: string) {
+    super(detail);
+    this.name = 'LoadError';
+  }
+}
+
+/** Maps raw yt-dlp / HTTP errors to a reason we can explain to users. */
+export function classifyLoadError(e: unknown): LoadError {
+  if (e instanceof LoadError) return e;
+  const text = e instanceof Error ? e.message : String(e);
+  if (e instanceof UnsupportedError) return new LoadError('unsupported', text);
+  const rules: [RegExp, LoadErrorReason][] = [
+    [/truncated|incomplete youtube id|looks truncated|invalid url|is not a valid url/i, 'incompleteLink'],
+    [/private video|private playlist|this playlist is private/i, 'private'],
+    [/age|sign in to confirm your age|inappropriate/i, 'ageRestricted'],
+    [/not a bot|sign in to confirm|http error 429|too many requests/i, 'blocked'],
+    [/unavailable|does not exist|not found|removed|terminated|HTTP 404|no video formats/i, 'unavailable'],
+    [/unsupported url/i, 'unsupported'],
+  ];
+  const hit = rules.find(([re]) => re.test(text));
+  return new LoadError(hit ? hit[1] : 'generic', text);
+}
+
 /** Turns user input (search text or URL) into playable tracks. */
 export async function resolveQuery(input: string): Promise<ResolveResult> {
   return resolveDetected(detect(input));
@@ -22,6 +49,7 @@ async function resolveDetected(d: Detected): Promise<ResolveResult> {
       return { tracks: first ? [first] : [] };
     }
     case 'youtube':
+      if (d.kind === 'invalid') throw new LoadError('incompleteLink', `YouTube id "${d.id}" is not 11 characters`);
       return resolveWithYtdlp(d.url, MAX_PLAYLIST_ITEMS);
     case 'spotify':
       if (d.kind === 'short') {
