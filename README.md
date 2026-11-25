@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.png" alt="Rockola: neon jukebox music bot" width="680">
+</p>
+
 # Rockola
 
 Free, open-source Discord music bot. Slash commands, a real queue, audio filters and links from
