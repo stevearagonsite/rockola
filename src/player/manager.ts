@@ -23,6 +23,10 @@ export class PlayerManager {
         settings: this.settings,
         idleTimeoutMs: this.idleTimeoutMs,
         botUserId: this.client.user?.id ?? '0',
+        findChannel: (channelId) => {
+          const channel = this.client.channels.cache.get(channelId);
+          return channel && 'guildId' in channel && channel.guildId === guildId && channel.isSendable() ? channel : null;
+        },
         onDestroy: (id) => {
           if (this.players.get(id) === player) this.players.delete(id);
         },

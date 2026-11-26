@@ -1,4 +1,4 @@
-import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { ChannelType, EmbedBuilder, MessageFlags, PermissionFlagsBits } from 'discord.js';
 import { BRAND_COLOR } from '../discord/ui.js';
 import { isLocale, t } from '../i18n/index.js';
 import { FILTER_LABELS, FILTER_NAMES, isFilterName, toggleFilter } from '../player/filters.js';
@@ -126,6 +126,21 @@ const settings: Command = {
     .addRoleOption((o) =>
       o.setName('dj_role').setNameLocalizations(ES('rol_dj')).setDescription('Role allowed to control playback').setDescriptionLocalizations(ES('Rol que puede controlar la música')),
     )
+    .addChannelOption((o) =>
+      o
+        .setName('music_channel')
+        .setNameLocalizations(ES('canal_musica'))
+        .setDescription('Only text channel for commands and notifications')
+        .setDescriptionLocalizations(ES('Único canal de texto para comandos y avisos'))
+        .addChannelTypes(ChannelType.GuildText),
+    )
+    .addBooleanOption((o) =>
+      o
+        .setName('clear_music_channel')
+        .setNameLocalizations(ES('quitar_canal_musica'))
+        .setDescription('Allow commands in any channel again')
+        .setDescriptionLocalizations(ES('Permitir comandos en cualquier canal')),
+    )
     .addBooleanOption((o) =>
       o.setName('clear_dj_role').setNameLocalizations(ES('quitar_rol_dj')).setDescription('Remove the DJ role restriction').setDescriptionLocalizations(ES('Quitar la restricción de rol DJ')),
     )
@@ -141,6 +156,9 @@ const settings: Command = {
     const role = o.getRole('dj_role');
     if (role) patch.djRoleId = role.id;
     if (o.getBoolean('clear_dj_role')) patch.djRoleId = null;
+    const musicChannel = o.getChannel('music_channel');
+    if (musicChannel) patch.musicChannelId = musicChannel.id;
+    if (o.getBoolean('clear_music_channel')) patch.musicChannelId = null;
     const changed = Object.keys(patch).length > 0;
     const s = changed ? ctx.settings.update(guildId, patch) : ctx.settings.get(guildId);
     const locale = s.locale;
@@ -151,6 +169,11 @@ const settings: Command = {
         { name: t(locale, 'settings.language'), value: s.locale === 'es' ? 'Español' : 'English', inline: true },
         { name: t(locale, 'settings.defaultVolume'), value: `${s.defaultVolume}%`, inline: true },
         { name: t(locale, 'settings.djRole'), value: s.djRoleId ? `<@&${s.djRoleId}>` : t(locale, 'np.none'), inline: true },
+        {
+          name: t(locale, 'settings.musicChannel'),
+          value: s.musicChannelId ? `<#${s.musicChannelId}>` : t(locale, 'settings.anyChannel'),
+          inline: true,
+        },
         { name: 'Autoplay', value: t(locale, s.autoplay ? 'np.on' : 'np.off'), inline: true },
         { name: '24/7', value: t(locale, s.stay247 ? 'np.on' : 'np.off'), inline: true },
       );
@@ -158,6 +181,7 @@ const settings: Command = {
       content: changed ? t(locale, 'settings.saved') : undefined,
       embeds: [embed],
       allowedMentions: { parse: [] },
+      flags: MessageFlags.Ephemeral,
     });
   },
 };
@@ -176,7 +200,7 @@ const HELP: Record<'es' | 'en', [string, string][]> = {
     ['/filters', 'Bass boost, nightcore, vaporwave, 8D'],
     ['/autoplay · /247', 'Canciones parecidas al terminar · quedarse en el canal'],
     ['/lyrics', 'Letra de la canción'],
-    ['/settings', 'Idioma, volumen por defecto y rol DJ'],
+    ['/settings', 'Idioma, volumen, rol DJ y canal de música'],
   ],
   en: [
     ['/play', 'Play a search or a link (YouTube, Spotify, Suno)'],
@@ -191,7 +215,7 @@ const HELP: Record<'es' | 'en', [string, string][]> = {
     ['/filters', 'Bass boost, nightcore, vaporwave, 8D'],
     ['/autoplay · /247', 'Similar songs when the queue ends · stay in the channel'],
     ['/lyrics', 'Song lyrics'],
-    ['/settings', 'Language, default volume and DJ role'],
+    ['/settings', 'Language, volume, DJ role and music channel'],
   ],
 };
 

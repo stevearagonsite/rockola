@@ -10,6 +10,7 @@ export const es = {
   'error.invalidTime': 'Tiempo inválido. Probá con 90, 1:30 o 1m30s.',
   'error.notSeekable': 'Esta canción no permite adelantar (en vivo o duración desconocida).',
   'error.generic': 'Algo salió mal. Probá de nuevo.',
+  'error.useMusicChannel': 'Usá los comandos de música en {channel}.',
   'error.guildOnly': 'Este comando solo funciona en servidores.',
   'error.trackFailed': 'No pude reproducir **{title}**, paso a la siguiente.',
   'error.connectFailed': 'No pude conectarme al canal de voz.',
@@ -81,6 +82,8 @@ export const es = {
   'settings.language': 'Idioma',
   'settings.defaultVolume': 'Volumen por defecto',
   'settings.djRole': 'Rol DJ',
+  'settings.musicChannel': 'Canal de música',
+  'settings.anyChannel': 'cualquier canal',
   'settings.saved': '✅ Configuración guardada.',
   'help.title': 'Rockola · comandos',
   'help.description':

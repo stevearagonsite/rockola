@@ -8,6 +8,7 @@ import { t } from '../i18n/index.js';
 import type { PlayerManager } from '../player/manager.js';
 import type { LoopMode } from '../player/queue.js';
 import { log } from '../util/logger.js';
+import { redirectChannel } from './channelGate.js';
 import { BUTTON_IDS } from './ui.js';
 
 export interface Services {
@@ -72,7 +73,15 @@ export async function handleInteraction(interaction: Interaction, s: Services): 
   if (!interaction.isChatInputCommand()) return;
   const cmd = commandMap.get(interaction.commandName);
   if (!cmd) return;
-  const ctx: Context = { interaction, ...s, locale: s.settings.get(interaction.guildId).locale };
+  const guildSettings = s.settings.get(interaction.guildId);
+  const ctx: Context = { interaction, ...s, locale: guildSettings.locale };
+  const redirect = redirectChannel(guildSettings.musicChannelId, interaction.commandName, interaction.channelId);
+  if (redirect) {
+    await interaction
+      .reply({ content: t(ctx.locale, 'error.useMusicChannel', { channel: `<#${redirect}>` }), flags: MessageFlags.Ephemeral })
+      .catch(() => undefined);
+    return;
+  }
   log.info(`[${interaction.guildId}] /${interaction.commandName} by ${interaction.user.id}`);
   try {
     if (cmd.dj && !(await checkDj(ctx))) return;

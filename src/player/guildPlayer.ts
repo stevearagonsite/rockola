@@ -34,6 +34,8 @@ export interface PlayerDeps {
   idleTimeoutMs: number;
   onDestroy: (guildId: string) => void;
   botUserId: string;
+  /** Looks up a sendable text channel of this guild by id. */
+  findChannel: (channelId: string) => SendableChannels | null;
 }
 
 /** One music player per guild: voice connection, queue, filters and the now-playing message. */
@@ -357,16 +359,24 @@ export class GuildPlayer {
 
   // ----- messages -----
 
+  /** Where notifications go: the configured music channel, else the channel of the last command. */
+  notifyChannel(): SendableChannels | null {
+    const musicChannelId = this.deps.settings.get(this.guildId).musicChannelId;
+    if (musicChannelId) return this.deps.findChannel(musicChannelId);
+    return this.textChannel;
+  }
+
   async say(content: string): Promise<void> {
-    await this.textChannel?.send({ content, allowedMentions: { parse: [] } }).catch((e: unknown) => {
+    await this.notifyChannel()?.send({ content, allowedMentions: { parse: [] } }).catch((e: unknown) => {
       log.debug('cannot send message:', (e as Error).message);
     });
   }
 
   private async sendNowPlaying(track: Track): Promise<void> {
-    if (!this.textChannel) return;
+    const channel = this.notifyChannel();
+    if (!channel) return;
     await this.clearNowPlaying();
-    this.npMessage = await this.textChannel
+    this.npMessage = await channel
       .send({
         embeds: [nowPlayingEmbed(this.locale, this.state(track), false)],
         components: [controlsRow(false, this.queue.loop)],

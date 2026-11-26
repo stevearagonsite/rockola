@@ -30,7 +30,9 @@ YouTube, Spotify and Suno. Replies in Spanish by default (English available per 
   `/filters` (bass boost, nightcore, vaporwave, 8D, off), `/autoplay`, `/247`, `/lyrics`, `/help`,
   `/settings`.
 - **Now-playing message** with buttons: pause/resume, skip, stop, loop.
-- **Per-server settings** in SQLite: language (es/en), default volume, DJ role, autoplay, 24/7.
+- **Per-server settings** in SQLite: language (es/en), default volume, DJ role, music channel, autoplay, 24/7.
+- **Music channel** (`/settings music_channel`): when set, commands used in other channels get a private
+  reply pointing there, and every bot message (now playing, queue end, errors, autoplay) is posted only there.
 - **DJ role**: when set, only members with that role (or Manage Server, or someone alone with the bot)
   can control playback; anyone can `/play`, `/search`, `/queue`, `/nowplaying` and `/lyrics`.
 - Leaves the voice channel after a period of inactivity or when everybody left, unless 24/7 mode is on.

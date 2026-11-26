@@ -12,6 +12,7 @@ export const en: Record<MessageKey, string> = {
   'error.invalidTime': 'Invalid time. Try 90, 1:30 or 1m30s.',
   'error.notSeekable': 'This track cannot be seeked (live or unknown length).',
   'error.generic': 'Something went wrong. Please try again.',
+  'error.useMusicChannel': 'Please use music commands in {channel}.',
   'error.guildOnly': 'This command only works in servers.',
   'error.trackFailed': 'Could not play **{title}**, skipping to the next one.',
   'error.connectFailed': 'Could not connect to the voice channel.',
@@ -83,6 +84,8 @@ export const en: Record<MessageKey, string> = {
   'settings.language': 'Language',
   'settings.defaultVolume': 'Default volume',
   'settings.djRole': 'DJ role',
+  'settings.musicChannel': 'Music channel',
+  'settings.anyChannel': 'any channel',
   'settings.saved': '✅ Settings saved.',
   'help.title': 'Rockola · commands',
   'help.description':

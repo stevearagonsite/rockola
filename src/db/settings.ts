@@ -11,6 +11,8 @@ export interface GuildSettings {
   stay247: boolean;
   stayChannelId: string | null;
   autoplay: boolean;
+  /** When set, commands only work here and every notification is posted here. */
+  musicChannelId: string | null;
 }
 
 interface Row {
@@ -21,6 +23,7 @@ interface Row {
   stay_247: number;
   stay_channel_id: string | null;
   autoplay: number;
+  music_channel_id: string | null;
 }
 
 export class SettingsStore {
@@ -40,6 +43,9 @@ export class SettingsStore {
       stay_channel_id TEXT,
       autoplay INTEGER NOT NULL DEFAULT 0
     )`);
+    // migrations for databases created by older versions
+    const columns = (this.db.prepare('PRAGMA table_info(guild_settings)').all() as { name: string }[]).map((c) => c.name);
+    if (!columns.includes('music_channel_id')) this.db.exec('ALTER TABLE guild_settings ADD COLUMN music_channel_id TEXT');
   }
 
   get(guildId: string): GuildSettings {
@@ -54,6 +60,7 @@ export class SettingsStore {
       stay247: row?.stay_247 === 1,
       stayChannelId: row?.stay_channel_id ?? null,
       autoplay: row?.autoplay === 1,
+      musicChannelId: row?.music_channel_id ?? null,
     };
     this.cache.set(guildId, settings);
     return settings;
@@ -63,11 +70,11 @@ export class SettingsStore {
     const next = { ...this.get(guildId), ...patch };
     this.db
       .prepare(
-        `INSERT INTO guild_settings (guild_id, locale, default_volume, dj_role_id, stay_247, stay_channel_id, autoplay)
-         VALUES (@guildId, @locale, @defaultVolume, @djRoleId, @stay247, @stayChannelId, @autoplay)
+        `INSERT INTO guild_settings (guild_id, locale, default_volume, dj_role_id, stay_247, stay_channel_id, autoplay, music_channel_id)
+         VALUES (@guildId, @locale, @defaultVolume, @djRoleId, @stay247, @stayChannelId, @autoplay, @musicChannelId)
          ON CONFLICT(guild_id) DO UPDATE SET locale = excluded.locale, default_volume = excluded.default_volume,
            dj_role_id = excluded.dj_role_id, stay_247 = excluded.stay_247, stay_channel_id = excluded.stay_channel_id,
-           autoplay = excluded.autoplay`,
+           autoplay = excluded.autoplay, music_channel_id = excluded.music_channel_id`,
       )
       .run({ ...next, stay247: next.stay247 ? 1 : 0, autoplay: next.autoplay ? 1 : 0 });
     this.cache.set(guildId, next);
