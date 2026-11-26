@@ -99,8 +99,9 @@ export async function resolveStream(track: Track): Promise<ResolvedStream> {
     track.youtubeId = best.youtubeId;
     track.thumbnail ??= best.thumbnail;
   }
-  // the media URL itself (from a page, a playlist or Suno) is what ffmpeg will fetch
-  await assertPublicUrl(stream.url);
+  // the media URL itself (from a page, a playlist or Suno) is what ffmpeg will fetch: pass on the
+  // checked, normalized form, since ffmpeg parses raw URLs differently from Node
+  stream.url = await assertPublicUrl(stream.url);
   if (stream.youtubeId) track.youtubeId = stream.youtubeId;
   if (track.durationMs === null && stream.durationMs && !stream.isLive) track.durationMs = stream.durationMs;
   streamCache.set(track, stream);

@@ -79,6 +79,10 @@ const systemLookup: Lookup = async (hostname) => (await dnsLookup(hostname, { al
  * policy is the second layer.
  */
 export async function assertPublicUrl(raw: string, lookup: Lookup = systemLookup): Promise<string> {
+  // Node's URL parser silently fixes these, but Python (yt-dlp) and ffmpeg read them differently
+  // (e.g. "http://a.com\\@127.0.0.1/" is a.com for Node and 127.0.0.1 for ffmpeg): refuse them.
+  // eslint-disable-next-line no-control-regex
+  if (/[\\\x00-\x20\x7f]/.test(raw)) throw new BlockedUrlError('ambiguous characters in URL');
   let u: URL;
   try {
     u = new URL(raw);

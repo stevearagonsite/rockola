@@ -60,6 +60,9 @@ describe('assertPublicUrl', () => {
     'ftp://example.com/a.mp3',
     'gopher://example.com/',
     'not a url',
+    'http://example.com\\@127.0.0.1:9099/x.mp3', // Node: example.com, ffmpeg/Python: 127.0.0.1
+    'http://example.com\t@127.0.0.1/',
+    ' http://example.com/',
   ])('blocks %s', async (url) => {
     await expect(assertPublicUrl(url, resolvesTo('93.184.216.34'))).rejects.toBeInstanceOf(BlockedUrlError);
   });
@@ -70,10 +73,8 @@ describe('assertPublicUrl', () => {
   });
 
   it('allows public hosts and returns the normalized URL', async () => {
-    expect(await assertPublicUrl('https://example.com/a b.mp3', resolvesTo('93.184.216.34'))).toBe('https://example.com/a%20b.mp3');
+    expect(await assertPublicUrl('https://example.com/a%20b.mp3?x=1', resolvesTo('93.184.216.34'))).toBe('https://example.com/a%20b.mp3?x=1');
     expect(await assertPublicUrl('https://8.8.8.8/x', resolvesTo())).toBe('https://8.8.8.8/x');
-    // backslash tricks are normalized before yt-dlp (Python) sees the URL
-    expect(await assertPublicUrl('http://example.com\\@127.0.0.1/', resolvesTo('93.184.216.34'))).toBe('http://example.com/@127.0.0.1/');
   });
 
   it('a host that does not resolve is a generic load error, not a block', async () => {
