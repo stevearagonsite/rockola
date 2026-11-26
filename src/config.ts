@@ -8,6 +8,8 @@ export interface Config {
   guildId: string | undefined;
   /** Guilds where slash commands are registered at startup (instant, unlike global commands). */
   guildIds: string[];
+  /** Only servers where the bot works; it leaves any other (empty = no restriction). */
+  allowedGuildIds: string[];
   spotifyClientId: string | undefined;
   spotifyClientSecret: string | undefined;
   defaultLocale: Locale;
@@ -17,6 +19,9 @@ export interface Config {
   ytdlpCookies: string | undefined;
   ytdlpJsRuntime: string | undefined;
   ytdlpCacheDir: string | undefined;
+  ytdlpMaxConcurrency: number;
+  /** Songs a server's queue can hold (protects memory from playlist floods). */
+  maxQueueSize: number;
   ffmpegPath: string;
   logLevel: string;
 }
@@ -51,6 +56,7 @@ export function loadConfig(requireDiscord = true): Config {
     clientId,
     guildId: guildIds[0],
     guildIds,
+    allowedGuildIds: opt('ALLOWED_GUILD_IDS') !== undefined ? parseIdList(opt('ALLOWED_GUILD_IDS')) : guildIds,
     spotifyClientId: opt('SPOTIFY_CLIENT_ID'),
     spotifyClientSecret: opt('SPOTIFY_CLIENT_SECRET'),
     defaultLocale: locale,
@@ -60,6 +66,8 @@ export function loadConfig(requireDiscord = true): Config {
     ytdlpCookies: opt('YTDLP_COOKIES'),
     ytdlpJsRuntime: opt('YTDLP_JS_RUNTIME'),
     ytdlpCacheDir: opt('YTDLP_CACHE_DIR'),
+    ytdlpMaxConcurrency: Math.max(1, Math.floor(num('YTDLP_MAX_CONCURRENCY', 4))),
+    maxQueueSize: Math.max(1, Math.floor(num('MAX_QUEUE_SIZE', 1000))),
     ffmpegPath: opt('FFMPEG_PATH') ?? 'ffmpeg',
     logLevel: opt('LOG_LEVEL') ?? 'info',
   };

@@ -8,13 +8,17 @@ export function setLogLevel(level: string): void {
 }
 
 // Anything that looks like a Discord token or bearer secret is masked before printing.
-const SECRET_PATTERNS = [
-  /[MNO][A-Za-z\d_-]{23,25}\.[A-Za-z\d_-]{6}\.[A-Za-z\d_-]{27,38}/g,
-  /(Bearer|Bot)\s+[A-Za-z0-9._-]{20,}/g,
+const SECRET_PATTERNS: [RegExp, string][] = [
+  [/[MNO][A-Za-z\d_-]{23,25}\.[A-Za-z\d_-]{6}\.[A-Za-z\d_-]{27,38}/g, '[redacted]'],
+  [/(Bearer|Bot|Basic)\s+[A-Za-z0-9._~+/=-]{20,}/g, '[redacted]'],
+  // user:password@ in URLs
+  [/(\b[a-z][a-z0-9+.-]*:\/\/)[^\s/@:]+:[^\s/@]+@/gi, '$1[redacted]@'],
+  // credentials in query strings (API keys, signed-URL signatures, tokens)
+  [/([?&](?:[a-z_]*key|[a-z_]*token|secret|client_secret|password|passwd|sig|signature|auth)=)[^&\s"']+/gi, '$1[redacted]'],
 ];
 
 export function redact(text: string): string {
-  return SECRET_PATTERNS.reduce((acc, re) => acc.replace(re, '[redacted]'), text);
+  return SECRET_PATTERNS.reduce((acc, [re, to]) => acc.replace(re, to), text);
 }
 
 function fmt(arg: unknown): string {

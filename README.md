@@ -85,6 +85,9 @@ Copy `.env.example` to `.env` and fill it in. Never commit `.env`.
 | `YTDLP_JS_RUNTIME` | no | JS runtime yt-dlp uses for YouTube challenges (`deno` by default; Docker uses `node`) |
 | `YTDLP_CACHE_DIR` | no | Persistent yt-dlp cache (faster first play) |
 | `YTDLP_COOKIES` | no | Cookies file, only if YouTube starts asking to "confirm you're not a bot" |
+| `ALLOWED_GUILD_IDS` | no | Only servers where the bot works; it leaves any other (default: `DISCORD_GUILD_IDS`, empty = any) |
+| `MAX_QUEUE_SIZE` | no | Songs a server's queue can hold (default 1000) |
+| `YTDLP_MAX_CONCURRENCY` | no | yt-dlp processes running at once across all servers (default 4) |
 | `LOG_LEVEL` | no | `debug`, `info` (default), `warn`, `error` |
 
 ### 3. Run with Docker (recommended)
@@ -144,7 +147,9 @@ and the encrypted UDP packets sent to Discord (with the encryption mode and DAVE
 
 Secrets: a gitleaks pre-commit hook is installed by `pnpm install` (`git config core.hooksPath
 .githooks`; requires [gitleaks](https://github.com/gitleaks/gitleaks)). CI runs lint, typecheck,
-tests, a Docker build and gitleaks over the full history.
+tests, `pnpm audit`, a Docker build and gitleaks over the full history; CodeQL and Dependabot run
+too. See [SECURITY.md](SECURITY.md) for how links are checked (no internal hosts) and how to report
+a vulnerability.
 
 ## Legal
 

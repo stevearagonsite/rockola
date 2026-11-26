@@ -28,7 +28,11 @@ export interface PcmStreamOptions {
 /** Builds ffmpeg arguments that decode any input to 48 kHz stereo s16le PCM on stdout. */
 export function ffmpegArgs(o: PcmStreamOptions): string[] {
   const args = ['-nostdin', '-hide_banner', '-loglevel', 'error'];
-  if (/^https?:/i.test(o.url)) {
+  const remote = /^https?:/i.test(o.url);
+  // Only the protocols a remote stream needs (HLS segments and keys included): an HLS playlist or
+  // a redirect must never make ffmpeg open file:, concat:, subfile:, data: and friends.
+  args.push('-protocol_whitelist', remote ? 'http,https,tls,tcp,crypto' : 'file');
+  if (remote) {
     args.push('-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_on_network_error', '1', '-reconnect_delay_max', '5');
     const headers = { ...(o.headers ?? {}) };
     const ua = headers['User-Agent'] ?? headers['user-agent'];
@@ -36,7 +40,8 @@ export function ffmpegArgs(o: PcmStreamOptions): string[] {
     delete headers['user-agent'];
     if (ua) args.push('-user_agent', ua);
     const extra = Object.entries(headers)
-      .map(([k, v]) => `${k}: ${v}\r\n`)
+      // header names/values come from extractors: no CR/LF smuggling of extra headers
+      .map(([k, v]) => `${k.replace(/[\r\n:]/g, '')}: ${String(v).replace(/[\r\n]/g, ' ')}\r\n`)
       .join('');
     if (extra) args.push('-headers', extra);
   }

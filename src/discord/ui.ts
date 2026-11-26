@@ -24,7 +24,9 @@ const SOURCE_LABEL: Record<Track['source'], string> = {
 export function trackLink(track: Track, max = 80): string {
   const title = track.title.length > max ? `${track.title.slice(0, max - 1)}…` : track.title;
   const safe = title.replace(/([[\]*_~`|])/g, '\\$1');
-  return `[${safe}](${track.url})`;
+  // the URL comes from extractors: only real web links, and no ")" that would end the markdown link
+  if (!/^https?:\/\//i.test(track.url)) return safe;
+  return `[${safe}](${track.url.replace(/[()<>\s]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`)})`;
 }
 
 export function loopName(locale: Locale, loop: LoopMode): string {

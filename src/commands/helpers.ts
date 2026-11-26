@@ -1,4 +1,6 @@
 import {
+  ApplicationIntegrationType,
+  InteractionContextType,
   MessageFlags,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -16,7 +18,9 @@ export function command(name: string, en: string, es: string): SlashCommandBuild
     .setName(name)
     .setDescription(en)
     .setDescriptionLocalizations({ 'es-ES': es, 'es-419': es })
-    .setContexts(0); // guild only
+    // server installs used inside servers only: no DMs, no user-installed app in foreign servers
+    .setIntegrationTypes(ApplicationIntegrationType.GuildInstall)
+    .setContexts(InteractionContextType.Guild);
 }
 
 export const ES = (es: string) => ({ 'es-ES': es, 'es-419': es });

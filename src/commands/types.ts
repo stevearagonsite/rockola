@@ -20,6 +20,8 @@ export interface Command {
   data: RESTPostAPIChatInputApplicationCommandsJSONBody;
   /** Needs the DJ role (when one is configured). */
   dj?: boolean;
+  /** Starts yt-dlp or external lookups: rate limited per member and per server. */
+  heavy?: boolean;
   execute(ctx: Context): Promise<void>;
   autocomplete?(interaction: AutocompleteInteraction<'cached'>): Promise<void>;
 }

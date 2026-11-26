@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { resolveRedirect } from '../util/http.js';
+import { assertPublicUrl, BlockedUrlError } from '../util/netguard.js';
 import { detect, type Detected } from './detect.js';
 import { resolveSpotify } from './spotify.js';
 import { resolveSuno } from './suno.js';
@@ -24,7 +25,7 @@ export class LoadError extends Error {
 export function classifyLoadError(e: unknown): LoadError {
   if (e instanceof LoadError) return e;
   const text = e instanceof Error ? e.message : String(e);
-  if (e instanceof UnsupportedError) return new LoadError('unsupported', text);
+  if (e instanceof UnsupportedError || e instanceof BlockedUrlError) return new LoadError('unsupported', text);
   const rules: [RegExp, LoadErrorReason][] = [
     [/truncated|incomplete youtube id|looks truncated|invalid url|is not a valid url/i, 'incompleteLink'],
     [/private video|private playlist|this playlist is private/i, 'private'],
@@ -63,7 +64,8 @@ async function resolveDetected(d: Detected): Promise<ResolveResult> {
     case 'suno':
       return resolveSuno(d.kind, d.kind === 'short' ? d.url : d.id);
     case 'url':
-      return resolveWithYtdlp(d.url, MAX_PLAYLIST_ITEMS);
+      // any other site goes through yt-dlp's generic extractor: never towards internal hosts
+      return resolveWithYtdlp(await assertPublicUrl(d.url), MAX_PLAYLIST_ITEMS);
   }
 }
 
@@ -85,7 +87,8 @@ export async function resolveStream(track: Track): Promise<ResolvedStream> {
   if (plan.kind === 'direct') {
     stream = { url: plan.url };
   } else if (plan.kind === 'ytdlp') {
-    stream = await getStream(plan.target);
+    // playlist entries from arbitrary sites can point anywhere: check each one before fetching it
+    stream = await getStream(await assertPublicUrl(plan.target));
   } else {
     const candidates = await searchYouTube(plan.query, 5);
     const best = pickBestMatch(candidates, { title: track.title, artist: track.author, durationMs: plan.durationMs });
@@ -96,6 +99,8 @@ export async function resolveStream(track: Track): Promise<ResolvedStream> {
     track.youtubeId = best.youtubeId;
     track.thumbnail ??= best.thumbnail;
   }
+  // the media URL itself (from a page, a playlist or Suno) is what ffmpeg will fetch
+  await assertPublicUrl(stream.url);
   if (stream.youtubeId) track.youtubeId = stream.youtubeId;
   if (track.durationMs === null && stream.durationMs && !stream.isLive) track.durationMs = stream.durationMs;
   streamCache.set(track, stream);

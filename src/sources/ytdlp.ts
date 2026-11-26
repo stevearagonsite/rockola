@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { Semaphore } from '../util/rateLimit.js';
 
 export interface YtdlpOptions {
   binary: string;
@@ -6,12 +7,16 @@ export interface YtdlpOptions {
   jsRuntime?: string;
   cacheDir?: string;
   timeoutMs?: number;
+  /** yt-dlp processes allowed at once across all servers (each one is a Python process). */
+  maxConcurrency?: number;
 }
 
 let options: YtdlpOptions = { binary: 'yt-dlp' };
+let slots = new Semaphore(4);
 
 export function configureYtdlp(next: YtdlpOptions): void {
   options = next;
+  slots = new Semaphore(Math.max(1, next.maxConcurrency ?? 4));
 }
 
 /** Raw entry shape returned by `yt-dlp -J` (only the fields we read). */
@@ -59,6 +64,10 @@ function baseArgs(): string[] {
 /** Runs yt-dlp and parses its single JSON document (-J). */
 export function ytdlpJson(target: string, extra: string[] = [], timeoutMs = options.timeoutMs ?? 45_000): Promise<YtdlpInfo> {
   const args = [...baseArgs(), '-J', ...extra, '--', target];
+  return slots.run(() => runJson(args, timeoutMs));
+}
+
+function runJson(args: string[], timeoutMs: number): Promise<YtdlpInfo> {
   return new Promise((resolve, reject) => {
     execFile(options.binary, args, { maxBuffer: 64 * 1024 * 1024, timeout: timeoutMs }, (err, stdout, stderr) => {
       if (err) {

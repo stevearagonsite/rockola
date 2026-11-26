@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-FROM node:22-bookworm-slim AS build
+# Base image pinned by digest (Dependabot keeps it current).
+FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb AS build
 WORKDIR /app
 # toolchain only used if a native module has no prebuilt binary for this platform
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
@@ -16,7 +17,7 @@ COPY src ./src
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm build && rm -rf node_modules && pnpm install --frozen-lockfile --prod --offline
 
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates tini python3 python3-venv \
   && rm -rf /var/lib/apt/lists/*
 # yt-dlp from PyPI in its own venv (starts much faster than the single-file build) and
@@ -28,7 +29,8 @@ ENV NODE_ENV=production \
     YTDLP_PATH=/opt/yt-dlp/bin/yt-dlp \
     YTDLP_JS_RUNTIME=node \
     YTDLP_CACHE_DIR=/app/data/yt-dlp-cache \
-    DATABASE_PATH=/app/data/rockola.sqlite
+    DATABASE_PATH=/app/data/rockola.sqlite \
+    HEALTH_FILE=/tmp/rockola-health
 WORKDIR /app
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
@@ -37,5 +39,8 @@ COPY --chown=node:node docker/entrypoint.sh /usr/local/bin/rockola-entrypoint
 RUN mkdir -p /app/data && chown node:node /app/data && chmod 755 /usr/local/bin/rockola-entrypoint
 USER node
 VOLUME ["/app/data"]
+# Healthy while the Discord gateway is connected (src/util/health.ts refreshes the file every 30 s).
+HEALTHCHECK --interval=60s --timeout=10s --start-period=180s --retries=3 \
+  CMD ["node", "-e", "const s=require('fs').statSync(process.env.HEALTH_FILE);process.exit(Date.now()-s.mtimeMs<120000?0:1)"]
 ENTRYPOINT ["/usr/bin/tini", "--", "rockola-entrypoint"]
 CMD ["node", "dist/index.js"]

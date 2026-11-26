@@ -85,6 +85,7 @@ const lyrics: Command = {
       o.setName('query').setNameLocalizations(ES('busqueda')).setDescription('Song and artist').setDescriptionLocalizations(ES('Canción y artista')),
     )
     .toJSON(),
+  heavy: true,
   async execute(ctx) {
     const current = ctx.manager.get(ctx.interaction.guildId)?.queue.current;
     const given = ctx.interaction.options.getString('query');
@@ -146,6 +147,12 @@ const settings: Command = {
     )
     .toJSON(),
   async execute(ctx) {
+    // Discord hides it by default, but admins can grant the command to anyone in Integrations:
+    // changing settings still needs Manage Server.
+    if (!ctx.interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
+      await reply(ctx, `❌ ${msg(ctx, 'error.adminOnly')}`, true);
+      return;
+    }
     const o = ctx.interaction.options;
     const guildId = ctx.interaction.guildId;
     const patch: Parameters<typeof ctx.settings.update>[1] = {};

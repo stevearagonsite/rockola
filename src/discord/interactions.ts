@@ -8,13 +8,25 @@ import { t } from '../i18n/index.js';
 import type { PlayerManager } from '../player/manager.js';
 import type { LoopMode } from '../player/queue.js';
 import { log } from '../util/logger.js';
+import { RateLimiter } from '../util/rateLimit.js';
 import { redirectChannel } from './channelGate.js';
+import { isGuildAllowed } from './guildAllowlist.js';
 import { BUTTON_IDS } from './ui.js';
 
 export interface Services {
   manager: PlayerManager;
   settings: SettingsStore;
   config: Config;
+}
+
+/** Commands that start yt-dlp or external lookups: per member and per server limits. */
+export const memberLimiter = new RateLimiter(5, 30_000);
+export const guildLimiter = new RateLimiter(30, 60_000);
+
+/** Returns the ms to wait when a heavy command is over its limit, else 0 (and counts the hit). */
+export function heavyCommandWait(guildId: string, userId: string, member = memberLimiter, guild = guildLimiter): number {
+  const wait = member.take(`${guildId}:${userId}`);
+  return wait || guild.take(guildId);
 }
 
 const NEXT_LOOP: Record<LoopMode, LoopMode> = { off: 'queue', queue: 'track', track: 'off' };
@@ -61,6 +73,16 @@ export async function handleInteraction(interaction: Interaction, s: Services): 
     }
     return;
   }
+  if (!isGuildAllowed(s.config.allowedGuildIds, interaction.guildId)) {
+    log.warn(`[${interaction.guildId}] interaction from a server that is not allowed (user ${interaction.user.id}), rejected`);
+    if (interaction.isAutocomplete()) await interaction.respond([]).catch(() => undefined);
+    else if (interaction.isRepliable()) {
+      await interaction
+        .reply({ content: t(s.config.defaultLocale, 'error.guildNotAllowed'), flags: MessageFlags.Ephemeral })
+        .catch(() => undefined);
+    }
+    return;
+  }
   if (interaction.isAutocomplete()) {
     const cmd = commandMap.get(interaction.commandName);
     await cmd?.autocomplete?.(interaction).catch(() => undefined);
@@ -94,6 +116,16 @@ export async function handleInteraction(interaction: Interaction, s: Services): 
       .reply({ content: t(ctx.locale, 'error.useMusicChannel', { channel: `<#${redirect}>` }), flags: MessageFlags.Ephemeral })
       .catch(() => undefined);
     return;
+  }
+  if (cmd.heavy) {
+    const wait = heavyCommandWait(interaction.guildId, interaction.user.id);
+    if (wait > 0) {
+      log.info(`[${interaction.guildId}] rate limited /${interaction.commandName} by ${interaction.user.id}`);
+      await interaction
+        .reply({ content: `⏳ ${t(ctx.locale, 'error.rateLimited', { seconds: Math.ceil(wait / 1000) })}`, flags: MessageFlags.Ephemeral })
+        .catch(() => undefined);
+      return;
+    }
   }
   try {
     if (cmd.dj && !(await checkDj(ctx))) return;

@@ -1,13 +1,17 @@
-.git
-.githooks
-.github
-node_modules
-dist
-coverage
-data
-.env
-*.env
-.env.*
-*.log
-test
-docker-compose.yml
+# Allowlist: only what the Dockerfile copies is sent to the builder, so .env, data/,
+# cookies, keys or local databases can never end up in the build context or an image layer.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.json
+!tsconfig.build.json
+!src/
+!docker/entrypoint.sh
+# defense in depth, in case someone adds a broad COPY later
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.sqlite*
+**/cookies*.txt

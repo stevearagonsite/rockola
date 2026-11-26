@@ -33,7 +33,13 @@ async function queueTracks(ctx: Context, infos: TrackInfo[], playlistName: strin
     await fail(ctx, 'error.connectFailed', { channel: `<#${channel.id}>` });
     return;
   }
-  const tracks: Track[] = infos.map((i) => toTrack(i, requester(ctx)));
+  // cap the queue so repeated playlist floods can't grow memory without bound
+  const room = ctx.config.maxQueueSize - player.queue.size;
+  if (room <= 0) {
+    await fail(ctx, 'error.queueFull', { max: ctx.config.maxQueueSize });
+    return;
+  }
+  const tracks: Track[] = infos.slice(0, room).map((i) => toTrack(i, requester(ctx)));
   const startedNow = await player.enqueue(tracks, next ? 1 : undefined);
   const first = tracks[0]!;
   if (playlistName && tracks.length > 1) {
@@ -59,6 +65,7 @@ const play: Command = {
       o.setName('next').setNameLocalizations(ES('siguiente')).setDescription('Put it next in the queue').setDescriptionLocalizations(ES('Ponerla primera en la cola')),
     )
     .toJSON(),
+  heavy: true,
   async execute(ctx) {
     const channel = await memberVoice(ctx);
     if (!channel) return;
@@ -108,6 +115,7 @@ const search: Command = {
       o.setName('query').setNameLocalizations(ES('busqueda')).setDescription('What to search').setDescriptionLocalizations(ES('Qué buscar')).setRequired(true),
     )
     .toJSON(),
+  heavy: true,
   async execute(ctx) {
     const channel = await memberVoice(ctx);
     if (!channel) return;

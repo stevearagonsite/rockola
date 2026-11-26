@@ -30,6 +30,10 @@ function host(u: URL): string {
   return u.hostname.toLowerCase().replace(/^(www|m)\./, '');
 }
 
+function playlistUrl(listId: string): string {
+  return `https://www.youtube.com/playlist?list=${encodeURIComponent(listId)}`;
+}
+
 function detectYouTube(u: URL): Detected | null {
   const h = host(u);
   const parts = u.pathname.split('/').filter(Boolean);
@@ -40,7 +44,7 @@ function detectYouTube(u: URL): Detected | null {
     else if (['shorts', 'live', 'embed', 'v'].includes(parts[0] ?? '')) id = parts[1];
     else if (parts[0] === 'playlist') {
       const listId = u.searchParams.get('list');
-      if (listId) return { type: 'youtube', kind: 'playlist', listId, url: `https://www.youtube.com/playlist?list=${listId}` };
+      if (listId) return { type: 'youtube', kind: 'playlist', listId, url: playlistUrl(listId) };
     }
   } else return null;
   if (id && YT_ID.test(id)) return { type: 'youtube', kind: 'video', id, url: `https://www.youtube.com/watch?v=${id}` };
@@ -48,7 +52,7 @@ function detectYouTube(u: URL): Detected | null {
   if (id && !(listId && !listId.startsWith('RD'))) return { type: 'youtube', kind: 'invalid', id };
   // watch?list=... without a video id: treat as a playlist (mixes "RD…" are endless, so skip them)
   if (listId && !listId.startsWith('RD')) {
-    return { type: 'youtube', kind: 'playlist', listId, url: `https://www.youtube.com/playlist?list=${listId}` };
+    return { type: 'youtube', kind: 'playlist', listId, url: playlistUrl(listId) };
   }
   return null;
 }
