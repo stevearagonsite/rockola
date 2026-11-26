@@ -74,7 +74,7 @@ Copy `.env.example` to `.env` and fill it in. Never commit `.env`.
 | --- | --- | --- |
 | `DISCORD_TOKEN` | yes | Bot token |
 | `DISCORD_CLIENT_ID` | yes | Application ID |
-| `DISCORD_GUILD_ID` | no | Test server: commands are registered there at startup (instant) |
+| `DISCORD_GUILD_IDS` | no | Comma-separated server IDs: commands are registered there at startup (instant). `DISCORD_GUILD_ID` with one ID also works |
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | no | Spotify Web API app; complete playlists. Without them the public embed is used |
 | `DEFAULT_LOCALE` | no | `es` (default) or `en` |
 | `IDLE_TIMEOUT_SECONDS` | no | Inactivity before leaving (default 180) |
@@ -110,7 +110,7 @@ Requirements: Node.js 22.13+, ffmpeg, and yt-dlp with a JavaScript runtime (deno
 ```sh
 npm install
 npm run build
-npm start                # registers commands in DISCORD_GUILD_ID if set
+npm start                # registers commands in DISCORD_GUILD_IDS if set
 npm run deploy-commands -- --global   # optional: register everywhere
 ```
 

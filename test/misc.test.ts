@@ -73,3 +73,12 @@ describe('ffmpegArgs HLS', () => {
     expect(ffmpegArgs({ url: 'https://host/a.m3u8', hls: true, filterChain: 'x' })).not.toContain('-extension_picky');
   });
 });
+
+describe('parseIdList', () => {
+  it('splits, validates and dedupes guild ids', async () => {
+    const { parseIdList } = await import('../src/config.js');
+    expect(parseIdList('476195750246875136, 1506003930436604037,476195750246875136')).toEqual(['476195750246875136', '1506003930436604037']);
+    expect(parseIdList(' 476195750246875136 ;abc; ')).toEqual(['476195750246875136']);
+    expect(parseIdList(undefined)).toEqual([]);
+  });
+});

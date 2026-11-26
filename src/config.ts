@@ -4,7 +4,10 @@ import type { Locale } from './i18n/index.js';
 export interface Config {
   token: string;
   clientId: string;
+  /** First test guild (self-test target). */
   guildId: string | undefined;
+  /** Guilds where slash commands are registered at startup (instant, unlike global commands). */
+  guildIds: string[];
   spotifyClientId: string | undefined;
   spotifyClientSecret: string | undefined;
   defaultLocale: Locale;
@@ -29,6 +32,11 @@ function num(name: string, fallback: number): number {
   return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
+/** Parses "id1, id2,id3" into unique Discord snowflakes, ignoring anything else. */
+export function parseIdList(raw: string | undefined): string[] {
+  return [...new Set((raw ?? '').split(/[\s,;]+/).filter((v) => /^\d{17,20}$/.test(v)))];
+}
+
 /** Loads settings from the environment. Secrets are never logged. */
 export function loadConfig(requireDiscord = true): Config {
   const token = opt('DISCORD_TOKEN') ?? '';
@@ -37,10 +45,12 @@ export function loadConfig(requireDiscord = true): Config {
     throw new Error('Missing DISCORD_TOKEN or DISCORD_CLIENT_ID. Copy .env.example to .env and fill it in.');
   }
   const locale = opt('DEFAULT_LOCALE') === 'en' ? 'en' : 'es';
+  const guildIds = parseIdList(opt('DISCORD_GUILD_IDS') ?? opt('DISCORD_GUILD_ID'));
   return {
     token,
     clientId,
-    guildId: opt('DISCORD_GUILD_ID'),
+    guildId: guildIds[0],
+    guildIds,
     spotifyClientId: opt('SPOTIFY_CLIENT_ID'),
     spotifyClientSecret: opt('SPOTIFY_CLIENT_SECRET'),
     defaultLocale: locale,

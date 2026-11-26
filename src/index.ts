@@ -37,12 +37,12 @@ client.once(Events.ClientReady, async (c) => {
   getStream('https://www.youtube.com/watch?v=jNQXAC9IVRw')
     .then(() => log.info(`yt-dlp warm-up done in ${Date.now() - warm}ms`))
     .catch((e: unknown) => log.warn('yt-dlp warm-up failed:', (e as Error).message));
-  if (config.guildId) {
+  for (const guildId of config.guildIds) {
     try {
-      const n = await registerCommands(config.token, config.clientId, config.guildId);
-      log.info(`registered ${n} slash commands in guild ${config.guildId}`);
+      const n = await registerCommands(config.token, config.clientId, guildId);
+      log.info(`registered ${n} slash commands in guild ${guildId}`);
     } catch (e) {
-      log.error('could not register guild commands:', (e as Error).message);
+      log.error(`could not register commands in guild ${guildId}:`, (e as Error).message);
     }
   }
   // Rejoin channels where 24/7 mode is on.
