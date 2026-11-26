@@ -13,9 +13,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm config set store-dir /pnpm/store && pnpm install --frozen-lockfile
 COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
-# build, then keep only production dependencies (re-linked from the store, no downloads)
+# build, then keep only production dependencies (re-linked from the store; downloads only when the
+# cache mount is empty, e.g. a CI runner that restored the install layer from the layer cache)
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm build && rm -rf node_modules && pnpm install --frozen-lockfile --prod --offline
+    pnpm build && rm -rf node_modules && pnpm install --frozen-lockfile --prod --prefer-offline
 
 FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates tini python3 python3-venv \
