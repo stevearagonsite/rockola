@@ -21,10 +21,13 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates tini python3 python3-venv \
   && rm -rf /var/lib/apt/lists/*
-# yt-dlp from PyPI in its own venv (starts much faster than the single-file build) and
-# upgraded at container start, see docker/entrypoint.sh
+# yt-dlp from PyPI in its own venv (starts much faster than the single-file build), pinned:
+# 2026.11.23 returns googlevideo URLs that ffmpeg gets 403 Forbidden on. Bump YTDLP_VERSION after
+# checking a long YouTube video plays (node dist/scripts/probe.js). YTDLP_AUTO_UPDATE=true upgrades
+# it at container start instead, see docker/entrypoint.sh
+ARG YTDLP_VERSION=2026.10.26
 RUN python3 -m venv /opt/yt-dlp \
-  && /opt/yt-dlp/bin/pip install --no-cache-dir --upgrade pip "yt-dlp[default]" \
+  && /opt/yt-dlp/bin/pip install --no-cache-dir --upgrade pip "yt-dlp[default]==${YTDLP_VERSION}" \
   && chown -R node:node /opt/yt-dlp
 ENV NODE_ENV=production \
     YTDLP_PATH=/opt/yt-dlp/bin/yt-dlp \

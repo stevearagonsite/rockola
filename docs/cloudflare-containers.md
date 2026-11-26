@@ -16,7 +16,7 @@ with a Worker in front) could.
 | Containers on the personal account | **No.** The account is on Workers Free; the API answers "Deploying containers requires the Workers Paid plan" (USD 5/month minimum). |
 | Gateway login, UDP voice + DAVE, YouTube/Spotify/Suno from Cloudflare egress | **Not tested** (needs the paid plan). Cloudflare's docs don't say whether outbound UDP leaves a Container; that is the main technical risk. |
 | Memory needed (local, linux image, 3 tracks resolved and played 30 s each) | cgroup peak **366 MiB** (includes page cache); CPU **13 s per 106 s** of activity (~0.12 vCPU). `lite` (256 MiB) is too small; smallest safe size: custom 1/8 vCPU, 512 MiB, 2 GB disk, or predefined `basic` (1/4 vCPU, 1 GiB, 4 GB). |
-| yt-dlp in the Docker image | **Regression:** yt-dlp 2026.11.23 (what the image upgrades to at start) returns googlevideo URLs that ffmpeg gets **403 Forbidden** on (only very short videos play). Pinning 2026.10.26 works. Affects any Docker deploy, not just Cloudflare. |
+| yt-dlp in the Docker image | **Regression:** yt-dlp 2026.11.23 (what the image used to upgrade to at start) returns googlevideo URLs that ffmpeg gets **403 Forbidden** on (only very short videos play). Pinning 2026.10.26 works. Affects any Docker deploy, not just Cloudflare. |
 
 ## Cost for 24/7 (Cloudflare prices published Nov 2026)
 
@@ -52,4 +52,4 @@ self-hosted instance (Mac, Windows PC as fallback).
 - The Worker exposes no HTTP route that starts, stops or controls the Container: keep-alive comes
   from Durable Object alarms. The only public route allowed is Discord's interactions endpoint, and
   only with Ed25519 signature verification.
-- Pin yt-dlp (see the regression above) before building the image.
+- yt-dlp is pinned in the image (`YTDLP_VERSION`, see the regression above).

@@ -47,8 +47,8 @@ YouTube, Spotify and Suno. Replies in Spanish by default (English available per 
   seeks and applies filters; the bot streams PCM into Discord with inline volume.
 
 Why not Lavalink or discord-player? Both work by wrapping a YouTube extractor that has to keep up
-with YouTube changes. yt-dlp is the extractor that gets fixed first when YouTube changes, it updates
-itself in the Docker image at every start, and it needs no extra Java service. Keeping the player in
+with YouTube changes. yt-dlp is the extractor that gets fixed first when YouTube changes, upgrading
+it is a one-line change in the Docker image, and it needs no extra Java service. Keeping the player in
 the bot (a small queue + one ffmpeg process per server) also makes filters and seeking simple. For a
 bot in a handful of servers this is the most reliable option; for hundreds of servers, Lavalink scales
 better.
@@ -99,7 +99,8 @@ docker compose logs -f
 ```
 
 The container restarts on its own (`restart: unless-stopped`), keeps settings in the `rockola-data`
-volume and upgrades yt-dlp at every start (`YTDLP_AUTO_UPDATE=false` disables that).
+volume and uses the yt-dlp version pinned in the image (`YTDLP_VERSION` build arg; 2026.11.23 gets
+403s on long YouTube videos). `YTDLP_AUTO_UPDATE=true` upgrades it at every start instead.
 
 To register the commands in every server (global commands can take up to an hour to appear):
 
