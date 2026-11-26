@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      # types follow the Node major we run (22 LTS, see .nvmrc and the Dockerfile)
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
     groups:
       dev-dependencies:
         dependency-type: development
@@ -13,6 +17,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # stay on the Node LTS line; digest and minor/patch updates still arrive
+      - dependency-name: node
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
