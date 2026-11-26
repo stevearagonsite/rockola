@@ -5,6 +5,7 @@ import {
   type InteractionReplyOptions,
   type VoiceBasedChannel,
 } from 'discord.js';
+import { VOICE_PROBLEM_KEY, voiceAccess, voiceProblem } from '../discord/voicePermissions.js';
 import { t, type MessageKey } from '../i18n/index.js';
 import type { GuildPlayer } from '../player/guildPlayer.js';
 import type { Context } from './types.js';
@@ -36,7 +37,16 @@ export function msg(ctx: Context, key: MessageKey, vars?: Record<string, string 
 }
 
 export async function fail(ctx: Context, key: MessageKey, vars?: Record<string, string | number>): Promise<false> {
-  await reply(ctx, `❌ ${msg(ctx, key, vars)}`, true);
+  const content = `❌ ${msg(ctx, key, vars)}`;
+  const i = ctx.interaction;
+  if (i.deferred && !i.replied) {
+    // a deferred reply can't become ephemeral: answer privately and remove the "thinking…" message
+    const sent = await i.followUp({ content, flags: MessageFlags.Ephemeral, allowedMentions: { parse: [] } }).then(() => true, () => false);
+    if (sent) await i.deleteReply().catch(() => undefined);
+    else await i.editReply({ content, components: [], allowedMentions: { parse: [] } }).catch(() => undefined);
+    return false;
+  }
+  await reply(ctx, content, true);
   return false;
 }
 
@@ -56,9 +66,9 @@ export async function memberVoice(ctx: Context): Promise<VoiceBasedChannel | nul
     return null;
   }
   const me = ctx.interaction.guild.members.me;
-  const perms = me ? channel.permissionsFor(me) : null;
-  if (!perms?.has([PermissionFlagsBits.Connect, PermissionFlagsBits.Speak])) {
-    await fail(ctx, 'error.noVoicePerms', { channel: `<#${channel.id}>` });
+  const problem = me ? voiceProblem(voiceAccess(channel, me)) : 'connect';
+  if (problem) {
+    await fail(ctx, VOICE_PROBLEM_KEY[problem], { channel: `<#${channel.id}>` });
     return null;
   }
   return channel;

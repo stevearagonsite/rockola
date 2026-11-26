@@ -30,7 +30,7 @@ async function queueTracks(ctx: Context, infos: TrackInfo[], playlistName: strin
   try {
     await player.connect(channel);
   } catch {
-    await fail(ctx, 'error.connectFailed');
+    await fail(ctx, 'error.connectFailed', { channel: `<#${channel.id}>` });
     return;
   }
   const tracks: Track[] = infos.map((i) => toTrack(i, requester(ctx)));

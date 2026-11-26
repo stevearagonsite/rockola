@@ -161,7 +161,7 @@ export class GuildPlayer {
     });
     connection.on('error', (e) => log.warn(`[${this.deps.guildId}] voice connection error:`, e.message));
     try {
-      await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+      await entersState(connection, VoiceConnectionStatus.Ready, 12_000);
     } catch (e) {
       log.warn(`[${this.deps.guildId}] voice connection not ready:`, (e as Error).message);
       this.destroy();
