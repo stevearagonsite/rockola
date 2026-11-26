@@ -76,3 +76,28 @@ describe('GuildPlayer notifications', () => {
     expect(p.notifyChannel()).toEqual({ id: MUSIC });
   });
 });
+
+describe('redirectChannel edge cases', () => {
+  it('redirects buttons pressed on messages outside the music channel', () => {
+    expect(redirectChannel(MUSIC, 'button', OTHER)).toBe(MUSIC);
+    expect(redirectChannel(MUSIC, 'button', MUSIC)).toBeNull();
+  });
+  it('redirects when the channel is unknown (no free pass)', () => {
+    expect(redirectChannel(MUSIC, 'play', undefined)).toBe(MUSIC);
+  });
+  it('a voice channel text chat or a thread is not the music channel', () => {
+    expect(redirectChannel(MUSIC, 'play', '1506004952097619998')).toBe(MUSIC);
+  });
+  it('tolerates ids stored with stray whitespace', () => {
+    expect(redirectChannel(` ${MUSIC} `, 'play', MUSIC)).toBeNull();
+  });
+  it('the setting survives a restart (new store on the same file)', () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'rockola-')), 'restart.sqlite');
+    const a = new SettingsStore(path, 'es');
+    a.update('1506003930436604037', { musicChannelId: MUSIC });
+    a.close();
+    const b = new SettingsStore(path, 'es');
+    expect(redirectChannel(b.get('1506003930436604037').musicChannelId, 'play', OTHER)).toBe(MUSIC);
+    b.close();
+  });
+});

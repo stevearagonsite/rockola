@@ -67,6 +67,15 @@ export async function handleInteraction(interaction: Interaction, s: Services): 
     return;
   }
   if (interaction.isButton() && interaction.customId.startsWith('rk:') && Object.values(BUTTON_IDS).includes(interaction.customId as never)) {
+    const { musicChannelId, locale } = s.settings.get(interaction.guildId);
+    const redirect = redirectChannel(musicChannelId, 'button', interaction.channelId);
+    log.info(`[${interaction.guildId}] button ${interaction.customId} by ${interaction.user.id} in #${interaction.channelId}${redirect ? ` -> redirected to #${redirect}` : ''}`);
+    if (redirect) {
+      await interaction
+        .reply({ content: t(locale, 'error.useMusicChannel', { channel: `<#${redirect}>` }), flags: MessageFlags.Ephemeral })
+        .catch(() => undefined);
+      return;
+    }
     await handleButton(interaction, s).catch((e: unknown) => log.warn('button failed:', (e as Error).message));
     return;
   }
@@ -76,13 +85,16 @@ export async function handleInteraction(interaction: Interaction, s: Services): 
   const guildSettings = s.settings.get(interaction.guildId);
   const ctx: Context = { interaction, ...s, locale: guildSettings.locale };
   const redirect = redirectChannel(guildSettings.musicChannelId, interaction.commandName, interaction.channelId);
+  log.info(
+    `[${interaction.guildId}] /${interaction.commandName} by ${interaction.user.id} in #${interaction.channelId}` +
+      (redirect ? ` -> redirected to #${redirect}` : ''),
+  );
   if (redirect) {
     await interaction
       .reply({ content: t(ctx.locale, 'error.useMusicChannel', { channel: `<#${redirect}>` }), flags: MessageFlags.Ephemeral })
       .catch(() => undefined);
     return;
   }
-  log.info(`[${interaction.guildId}] /${interaction.commandName} by ${interaction.user.id}`);
   try {
     if (cmd.dj && !(await checkDj(ctx))) return;
     await cmd.execute(ctx);
