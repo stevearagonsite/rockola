@@ -19,7 +19,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run lint && npm run typecheck && npm test",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
     "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch{}\""
   },
   "dependencies": {
@@ -40,7 +40,5 @@
     "typescript-eslint": "^8.74.0",
     "vitest": "^5.1.2"
   },
-  "overrides": {
-    "tar": "^7.5.23"
-  }
+  "packageManager": "pnpm@12.23.0"
 }

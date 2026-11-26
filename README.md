@@ -106,15 +106,19 @@ docker compose run --rm rockola node dist/scripts/deploy-commands.js --global
 
 ### 4. Run without Docker
 
-Requirements: Node.js 22.13+, ffmpeg, and yt-dlp with a JavaScript runtime (deno, or node via
+Requirements: Node.js 22.13+, [pnpm](https://pnpm.io) (`corepack enable pnpm` picks the version pinned
+in `package.json`), ffmpeg, and yt-dlp with a JavaScript runtime (deno, or node via
 `YTDLP_JS_RUNTIME=node`).
 
 ```sh
-npm install
-npm run build
-npm start                # registers commands in DISCORD_GUILD_IDS if set
-npm run deploy-commands -- --global   # optional: register everywhere
+pnpm install
+pnpm build
+pnpm start               # registers commands in DISCORD_GUILD_IDS if set
+pnpm run deploy-commands --global   # optional: register everywhere
 ```
+
+Native modules (`@discordjs/opus`) and `esbuild` are allowed to run their install scripts in
+`pnpm-workspace.yaml` (`allowBuilds`); pnpm blocks any other package's scripts.
 
 ### Hosting 24/7
 
@@ -129,8 +133,8 @@ task running `wsl.exe -d Ubuntu-24.04 --exec true`).
 ## Development
 
 ```sh
-npm run dev          # watch mode with tsx
-npm run check        # lint + typecheck + unit tests
+pnpm dev             # watch mode with tsx
+pnpm check           # lint + typecheck + unit tests
 node dist/scripts/probe.js "query" "https://…"     # resolve + decode audio, no Discord needed
 node dist/scripts/selftest.js "query" "https://…"  # joins a voice channel of DISCORD_GUILD_ID and plays each item
 ```
@@ -138,7 +142,7 @@ node dist/scripts/selftest.js "query" "https://…"  # joins a voice channel of 
 `selftest` reports, per item, whether the player reached "playing", the PCM bytes and peak level,
 and the encrypted UDP packets sent to Discord (with the encryption mode and DAVE version).
 
-Secrets: a gitleaks pre-commit hook is installed by `npm install` (`git config core.hooksPath
+Secrets: a gitleaks pre-commit hook is installed by `pnpm install` (`git config core.hooksPath
 .githooks`; requires [gitleaks](https://github.com/gitleaks/gitleaks)). CI runs lint, typecheck,
 tests, a Docker build and gitleaks over the full history.
 

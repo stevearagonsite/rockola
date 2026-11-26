@@ -1,0 +1,13 @@
+allowBuilds:
+  '@discordjs/opus': true
+  esbuild: true
+
+# node-pre-gyp (used by @discordjs/opus to fetch its prebuilt binary) pins a vulnerable tar
+minimumReleaseAgeExclude:
+  - '@types/node@22.20.7'
+  - '@vitest/mocker@5.1.2'
+  - '@vitest/spy@5.1.2'
+  - vitest@5.1.2
+
+overrides:
+  tar: ^7.5.23

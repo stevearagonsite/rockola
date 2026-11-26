@@ -4,11 +4,17 @@ WORKDIR /app
 # toolchain only used if a native module has no prebuilt binary for this platform
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
-COPY package.json package-lock.json ./
-RUN npm ci
+# pnpm through corepack (version pinned by "packageManager" in package.json)
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 PNPM_HOME=/pnpm
+RUN npm install -g corepack@0.36.0 && corepack enable pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store && pnpm install --frozen-lockfile
 COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
-RUN npm run build && npm prune --omit=dev
+# build, then keep only production dependencies (re-linked from the store, no downloads)
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm build && rm -rf node_modules && pnpm install --frozen-lockfile --prod --offline
 
 FROM node:22-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates tini python3 python3-venv \
