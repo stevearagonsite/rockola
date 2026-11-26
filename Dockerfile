@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Base image pinned by digest (Dependabot keeps it current).
-FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb AS build
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370 AS build
 WORKDIR /app
 # toolchain only used if a native module has no prebuilt binary for this platform
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ \
@@ -18,7 +18,7 @@ COPY src ./src
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm build && rm -rf node_modules && pnpm install --frozen-lockfile --prod --prefer-offline
 
-FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb
+FROM node:25-bookworm-slim@sha256:81db02c4b671288a03915da9534dbd54f96d0e7c24d80ccc54f5b36b2e684370
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates tini python3 python3-venv \
   && rm -rf /var/lib/apt/lists/*
 # yt-dlp from PyPI in its own venv (starts much faster than the single-file build) and
